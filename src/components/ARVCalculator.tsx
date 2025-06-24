@@ -9,6 +9,8 @@ interface ARVCalculatorProps {
 const ARVCalculator: React.FC<ARVCalculatorProps> = ({ onReportGenerated }) => {
   const { user } = useAuth();
   const [address, setAddress] = useState('');
+  const [state, setState] = useState('TX');
+  const [zip, setZip] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastReport, setLastReport] = useState<{
     address: string;
@@ -16,27 +18,45 @@ const ARVCalculator: React.FC<ARVCalculatorProps> = ({ onReportGenerated }) => {
     generatedAt: Date;
   } | null>(null);
 
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.trim()) return;
+    if (!address.trim() || zip.length !== 5) return;
 
     setLoading(true);
-    
-    // Simulate API call to generate ARV report
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate mock ARV value
-    const estimatedValue = Math.floor(Math.random() * 400000) + 200000;
-    
-    setLastReport({
-      address: address.trim(),
-      estimatedValue,
-      generatedAt: new Date(),
-    });
-    
-    setLoading(false);
-    setAddress('');
-    onReportGenerated();
+
+    try {
+      const res = await fetch(`${apiUrl}/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: address.trim(),
+          state,
+          zip: zip.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Request failed');
+      }
+
+      const data = await res.json();
+
+      setLastReport({
+        address: data.address,
+        estimatedValue: data.estimated_value,
+        generatedAt: new Date(),
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setAddress('');
+      setState('TX');
+      setZip('');
+      onReportGenerated();
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -120,10 +140,44 @@ const ARVCalculator: React.FC<ARVCalculatorProps> = ({ onReportGenerated }) => {
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                State
+              </label>
+              <select
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                className="block w-full border border-gray-300 rounded-lg py-3 px-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="TX">TX</option>
+                <option value="CA">CA</option>
+                <option value="NY">NY</option>
+                <option value="FL">FL</option>
+                <option value="IL">IL</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                ZIP Code
+              </label>
+              <input
+                type="text"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                className="block w-full border border-gray-300 rounded-lg py-3 px-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="5-digit ZIP"
+                disabled={loading}
+              />
+            </div>
+          </div>
           
           <button
             type="submit"
-            disabled={loading || !address.trim()}
+            disabled={loading || !address.trim() || zip.length !== 5}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center space-x-2"
           >
             {loading ? (
@@ -194,3 +248,4 @@ const ARVCalculator: React.FC<ARVCalculatorProps> = ({ onReportGenerated }) => {
 };
 
 export default ARVCalculator;
+

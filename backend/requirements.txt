@@ -1,0 +1,6 @@
+Flask
+selenium
+fpdf
+Pillow
+opencv-python-headless
+requests

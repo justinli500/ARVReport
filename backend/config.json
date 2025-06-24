@@ -1,0 +1,8 @@
+{
+  "year_built": {"offset": 5},
+  "bedrooms": {"min_offset": 0, "max_offset": 0},
+  "bathrooms": {"min_offset": 0, "max_offset": 0},
+  "sqft": {"offset": 100},
+  "acres": {"offset": 10}
+}
+
