@@ -17,4 +17,3 @@ venv/
 .ipynb_checkpoints/
 # Generated PDF
 *.pdf
-
